@@ -1,0 +1,51 @@
+services:
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    ports:
+      - "8080:80"
+    depends_on:
+      - app
+    networks:
+      - dev-network
+
+  app:
+    build: ./app
+    container_name: app
+    environment:
+      - DATABASE_HOST=mysql
+      - DATABASE_USER=root
+      - DATABASE_PASSWORD=password
+      - DATABASE_NAME=appdb
+    ports:
+      - "3000:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - dev-network
+
+  mysql:
+    image: mysql:5.7
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: appdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dev-network
+
+volumes:
+  mysql-data:
+
+networks:
+  dev-network:
+    driver: bridge
